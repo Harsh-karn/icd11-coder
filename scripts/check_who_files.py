@@ -22,3 +22,4 @@ for p in patterns:
         print(f'{p}: FOUND (status {res.status}, len {cl})')
     except Exception as e:
         print(f'{p}: not found')
+

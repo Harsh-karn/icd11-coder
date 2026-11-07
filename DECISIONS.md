@@ -26,7 +26,7 @@ This log records design decisions, options evaluated, empirical measurements, an
 
 ### Decision 02: ICD-11 Knowledge Base Enrichment via WHO 2026-01 Multilingual Tabulations
 * **Date & Time:** 2026-11-07 06:35 UTC+5:30
-* **Commit:** Upcoming Phase 2 commit
+* **Commit:** `7f45444` (Phase 2 commit)
 * **Decision:** Build an enriched offline dataset (`data/enriched_mms.json`) joining the starter `mms-2026-01.json` with the official WHO 2026-01 SimpleTabulation datasets across English, Spanish, and French. Each code record is enriched with:
   - 5-level hierarchical ancestor taxonomy (`Grouping1` through `Grouping5` + Chapter)
   - Full translations for titles and block hierarchies in Spanish and French (for Slice B generalisation)
@@ -41,3 +41,24 @@ This log records design decisions, options evaluated, empirical measurements, an
   - Directly addresses the Generalisation (Slice B, 25 points) requirement for non-English visits and rare chapters.
 * **What to Revisit with More Time:**
   - Add clinical alias cross-walks (e.g., SNOMED CT to ICD-11 mapping tables and international brand-name medication dictionaries).
+
+
+---
+
+### Decision 03: Hybrid BM25 + Pre-computed MiniLM Dense Vector Retrieval Engine (Offline Path)
+* **Date & Time:** 2026-11-07 06:48 UTC+5:30
+* **Commit:** Upcoming Phase 3 commit
+* **Decision:** Implement a high-speed hybrid retrieval engine combining:
+  1. Native Python `BM25Okapi` with clinical abbreviation and colloquial synonym expansion (e.g., `chickenpox` $\leftrightarrow$ `varicella`, `jigger` $\leftrightarrow$ `tungiasis`, `bilharzia` $\leftrightarrow$ `schistosomiasis`, `URTI` $\leftrightarrow$ `acute nasopharyngitis`).
+  2. Pre-computed dense embeddings (26.9 MB, 18,375 $\times$ 384 dimensions) using `all-MiniLM-L6-v2`, saved locally to `data/icd11_embeddings.npy` to eliminate all runtime network downloads.
+  3. Query focus: extract diagnostic statements (`A:`, `Dx:`, and doctor conclusive statements in ambient transcripts) with double weighting.
+  4. ICD-11 structural prior: 1.35$\times$ score boost for leaf categories and 0.35$\times$ penalty for non-leaf parent categories based on dev-set empirical finding (100% of gold codes are leaves).
+* **Options Considered:**
+  1. *Pure BM25:* Scored 8.3 / 75.0 (Top-1 recall: 10.0%, Top-25 recall: 25.0%). Failed on ambient transcripts and colloquial vocabulary.
+  2. *Pure Dense Search:* Missed precise laboratory findings and specific acronyms like `mRDT`, `BS for MPS`, `TLD`.
+  3. *Hybrid Dense + BM25 with Specificity Priors (Selected):* Jumped the offline score from 8.3 to **18.8 / 75.0**, and Top-25 candidate recall to **53.3%**.
+* **Measurement / Rationale:**
+  - Runtime: <60ms per note on CPU (0.06s), perfectly satisfying the 60-minute limit for 600 notes.
+  - Satisfies the no-key constraint with a strong baseline score of 18.8 points out of 75.
+* **What to Revisit with More Time:**
+  - Fine-tune embedding weights with a larger synthetic clinical dataset or BM25 hyperparameter tuning ($k_1$, $b$).

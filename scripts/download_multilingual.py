@@ -18,3 +18,4 @@ for lang in ["es", "fr"]:
     with zipfile.ZipFile(zip_path) as z:
         z.extractall("data/downloads")
         print(f"Extracted {zip_name}.")
+

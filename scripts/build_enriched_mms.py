@@ -160,3 +160,4 @@ with open(out_path, "w", encoding="utf-8") as f:
 
 print(f"Enriched database written to {out_path} with {len(enriched)} entries.")
 print(f"Sample entry (1F40.Z):\n{json.dumps([x for x in enriched if x['code'] == '1F40.Z'][0], indent=2)}")
+

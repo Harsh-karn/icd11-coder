@@ -41,3 +41,4 @@ print(f"\nGold stats across all {len(notes)} notes:")
 print(f"Total gold codes: {total_gold}")
 print(f"Leaf codes: {leaf_count}/{total_gold} ({leaf_count/total_gold*100:.1f}%)")
 print(f"Residual codes (.Z/.X): {res_count}/{total_gold} ({res_count/total_gold*100:.1f}%)")
+

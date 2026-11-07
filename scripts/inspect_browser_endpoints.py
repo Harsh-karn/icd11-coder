@@ -15,3 +15,4 @@ try:
         print("Internal URLs:", [u for u in set(urls) if "json" in u or "mms" in u or "api" in u or "get" in u.lower()][:10])
 except Exception as e:
     print("Error:", e)
+
