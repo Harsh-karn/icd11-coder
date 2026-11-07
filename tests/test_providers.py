@@ -10,8 +10,14 @@ from openai import AsyncOpenAI
 from anthropic import AsyncAnthropic
 from src.llm_coder import LLMCoder
 
+SYSTEM_ENV_KEYS = {"SYSTEMROOT", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "APPDATA", "LOCALAPPDATA", "PATH", "TEMP", "TMP", "SystemDrive"}
+
+def get_base_env():
+    return {k: v for k, v in os.environ.items() if k in SYSTEM_ENV_KEYS}
+
 class Providers(unittest.IsolatedAsyncioTestCase):
     async def test_sdk_success_and_failure(self):
+        base_env = get_base_env()
         for provider in ['openai','anthropic']:
             for status in [200,401,429,500,"timeout"]:
                 transport_module = httpx if provider == "openai" else httpx2
@@ -27,7 +33,7 @@ class Providers(unittest.IsolatedAsyncioTestCase):
                     else:
                         data={'id':'fixture','type':'message','role':'assistant','model':'claude-haiku-4-5-20251001','content':[{'type':'text','text':'{"codes":["CA00"]}'}],'stop_reason':'end_turn','usage':{'input_tokens':10,'output_tokens':8}}
                     return transport_module.Response(200,json=data)
-                with patch.dict(os.environ,{},clear=True): coder=LLMCoder({'CA00'})
+                with patch.dict(os.environ, base_env, clear=True): coder=LLMCoder({'CA00'})
                 client=transport_module.AsyncClient(transport=transport_module.MockTransport(handler))
                 sdk=AsyncOpenAI if provider=='openai' else AsyncAnthropic
                 setattr(coder,'async_'+provider,sdk(api_key='synthetic-local-test',http_client=client,max_retries=0))
@@ -40,7 +46,8 @@ class Providers(unittest.IsolatedAsyncioTestCase):
                 await coder.close()
 
     async def test_budget_concurrent_requests(self):
-        with patch.dict(os.environ,{'ICD_BUDGET_USD':'.01'},clear=True): coder=LLMCoder({'CA00'})
+        base_env = get_base_env()
+        with patch.dict(os.environ,{**base_env, 'ICD_BUDGET_USD':'.01'},clear=True): coder=LLMCoder({'CA00'})
         calls=[]
         def handler(request):
             calls.append(1)
@@ -63,10 +70,11 @@ class Providers(unittest.IsolatedAsyncioTestCase):
         server = ThreadingHTTPServer(("127.0.0.1", 0), Proxy)
         thread = Thread(target=server.serve_forever, daemon=True)
         thread.start()
+        base_env = get_base_env()
         try:
             for key, host in [("OPENAI_API_KEY", "api.openai.com:443"),
                               ("ANTHROPIC_API_KEY", "api.anthropic.com:443")]:
-                env = {key: "synthetic-local-test", "HTTPS_PROXY": f"http://127.0.0.1:{server.server_port}"}
+                env = {**base_env, key: "synthetic-local-test", "HTTPS_PROXY": f"http://127.0.0.1:{server.server_port}"}
                 with patch.dict(os.environ, env, clear=True):
                     coder = LLMCoder({"CA00"})
                     try:

@@ -33,7 +33,9 @@ class Contracts(unittest.TestCase):
         self.assertEqual(['CA00'],coder._parse_and_validate('{"codes":["CA00","CA00"]}',candidates))
 
     def test_budget_no_dispatch(self):
-        with patch.dict(os.environ, {'ICD_BUDGET_USD':'0'}, clear=True):
+        sys_keys = {"SYSTEMROOT", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "APPDATA", "LOCALAPPDATA", "PATH", "TEMP", "TMP", "SystemDrive"}
+        base_env = {k: v for k, v in os.environ.items() if k in sys_keys}
+        with patch.dict(os.environ, {**base_env, 'ICD_BUDGET_USD':'0'}, clear=True):
             coder=LLMCoder({'CA00'})
         coder.async_openai=object()
         self.assertEqual([],asyncio.run(coder.predict_async('cold',[{'code':'CA00','title':'Cold'}])))
