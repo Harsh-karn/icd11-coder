@@ -35,3 +35,10 @@ emb_path = "data/icd11_embeddings.npy"
 np.save(emb_path, embeddings)
 print(f"Embeddings saved to {emb_path} with shape {embeddings.shape} ({os.path.getsize(emb_path) / 1024 / 1024:.2f} MB)")
 
+
+# Bind the saved matrix to the exact ordered records and local model files.
+import hashlib
+from pathlib import Path
+files = [Path("data/enriched_mms.json"), Path(emb_path)] + [p for p in Path(model_save_dir).rglob("*") if p.is_file()]
+manifest = {str(p.relative_to("data")): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+Path(emb_path).with_suffix(".manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

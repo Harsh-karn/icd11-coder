@@ -39,18 +39,14 @@ CLINICAL_ABBREVIATIONS = {
     "mrdt": "malaria rapid diagnostic test",
     "bs for mps": "blood slide malaria parasites",
     "mps": "malaria parasites",
-    "al": "artemether lumefantrine antimalarial",
     "coartem": "artemether lumefantrine antimalarial",
     "panadol": "paracetamol analgesic antipyretic",
     "pcm": "paracetamol",
     "ors": "oral rehydration salts gastroenteritis diarrhea",
-    "age": "acute gastroenteritis infectious diarrhea colitis",
-    "ge": "gastroenteritis infectious diarrhea",
-    "add": "acute diarrhoeal disease gastroenteritis",
     "sob": "shortness of breath dyspnoea breathless",
     "c/o": "complaining of",
     "dx": "diagnosis",
-    "bp": "blood pressure hypertension",
+    "bp": "blood pressure",
     "htn": "hypertension essential high blood pressure",
     "dm": "diabetes mellitus hyperglycaemia",
     "t2dm": "type 2 diabetes mellitus",
@@ -78,7 +74,7 @@ CLINICAL_ABBREVIATIONS = {
     "diarrhea": "gastroenteritis infectious diarrhoea enteritis"
 }
 
-TOKEN_PATTERN = re.compile(r"[a-z0-9]+(?:\.[a-z0-9]+)?")
+TOKEN_PATTERN = re.compile(r"[^\W_]+(?:\.[^\W_]+)?")
 
 def tokenize(text: str, expand_abbreviations: bool = True) -> List[str]:
     """Tokenize text into lowercase alphanumeric tokens with clinical expansion."""
@@ -90,7 +86,7 @@ def tokenize(text: str, expand_abbreviations: bool = True) -> List[str]:
     
     if expand_abbreviations:
         for phrase, expansion in CLINICAL_ABBREVIATIONS.items():
-            if phrase in text_lower:
+            if re.search(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", text_lower):
                 extra_tokens.extend(TOKEN_PATTERN.findall(expansion))
     
     tokens = TOKEN_PATTERN.findall(text_lower)

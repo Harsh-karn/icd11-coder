@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
+      - ICD_BUDGET_USD
       - OPENAI_API_KEY
       - ANTHROPIC_API_KEY
       - HTTPS_PROXY

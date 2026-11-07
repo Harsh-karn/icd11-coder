@@ -1,0 +1,24 @@
+{"id": "smoke-0-en", "text": "Cholera", "gold": ["1A00"], "slice": "B"}
+{"id": "smoke-0-es", "text": "Cólera", "gold": ["1A00"], "slice": "B"}
+{"id": "smoke-0-fr", "text": "Choléra", "gold": ["1A00"], "slice": "B"}
+{"id": "smoke-1-en", "text": "Acute nasopharyngitis", "gold": ["CA00"], "slice": "B"}
+{"id": "smoke-1-es", "text": "Nasofaringitis aguda", "gold": ["CA00"], "slice": "B"}
+{"id": "smoke-1-fr", "text": "Rhinopharyngite aigüe", "gold": ["CA00"], "slice": "B"}
+{"id": "smoke-2-en", "text": "Hashimoto thyroiditis", "gold": ["5A03.20"], "slice": "B"}
+{"id": "smoke-2-es", "text": "Tiroiditis de Hashimoto", "gold": ["5A03.20"], "slice": "B"}
+{"id": "smoke-2-fr", "text": "Thyroïdite de Hashimoto", "gold": ["5A03.20"], "slice": "B"}
+{"id": "smoke-3-en", "text": "Torsion of testis", "gold": ["GB01.0"], "slice": "B"}
+{"id": "smoke-3-es", "text": "Torsión de testículo", "gold": ["GB01.0"], "slice": "B"}
+{"id": "smoke-3-fr", "text": "Torsion du testicule", "gold": ["GB01.0"], "slice": "B"}
+{"id": "smoke-4-en", "text": "Duodenal ulcer, unspecified", "gold": ["DA63.Z"], "slice": "B"}
+{"id": "smoke-4-es", "text": "Úlcera duodenal, sin especificación", "gold": ["DA63.Z"], "slice": "B"}
+{"id": "smoke-4-fr", "text": "Ulcère du duodénum, sans précision", "gold": ["DA63.Z"], "slice": "B"}
+{"id": "smoke-5-en", "text": "Parkinson disease", "gold": ["8A00.0"], "slice": "B"}
+{"id": "smoke-5-es", "text": "Enfermedad de Parkinson", "gold": ["8A00.0"], "slice": "B"}
+{"id": "smoke-5-fr", "text": "Maladie de Parkinson", "gold": ["8A00.0"], "slice": "B"}
+{"id": "smoke-6-en", "text": "Essential hypertension", "gold": ["BA00"], "slice": "B"}
+{"id": "smoke-6-es", "text": "Hipertensión esencial", "gold": ["BA00"], "slice": "B"}
+{"id": "smoke-6-fr", "text": "Hypertension essentielle", "gold": ["BA00"], "slice": "B"}
+{"id": "smoke-7-en", "text": "Diabetic retinopathy", "gold": ["9B71.0"], "slice": "B"}
+{"id": "smoke-7-es", "text": "Retinopatía diabética", "gold": ["9B71.0"], "slice": "B"}
+{"id": "smoke-7-fr", "text": "Rétinopathie diabétique", "gold": ["9B71.0"], "slice": "B"}

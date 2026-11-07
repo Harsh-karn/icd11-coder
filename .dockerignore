@@ -1,0 +1,9 @@
+.git
+in
+out
+*.bundle
+__pycache__
+.venv
+.env
+.env.*
+data/downloads

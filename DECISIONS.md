@@ -1,3 +1,15 @@
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:d5f24e4da6133fd50f84ac1302dab39f9eb611bda02b7345e365994dd91b9799 -->
+
+<!-- coderabbit-ai-generated-section:v1:dabc4d9f5e63e14ac1306d8b74442fd24afcd50acc979ca9b86b9ffde6aa1419 -->
+
+<!-- coderabbit-ai-generated-section:v1:82a115304051829a640de6dac1aff8cc113b09510193486cfc4f44e25e430582 -->
+
+<!-- coderabbit-ai-generated-section:v1:210a3523e58e4c9907ad6fb4a1ee1e774383ece48394342e56fb79619b9b3779 -->
+
+<!-- coderabbit-ai-generated-section:v1:7eab0bdfa892f9c2f783944dc1ce6d0cadbe8e531b8b3622613a7abfcfa5bd3a -->
+
 # Architectural and Technical Decision Log (`DECISIONS.md`)
 
 This log records design decisions, options evaluated, empirical measurements, and trade-offs made throughout the development of the ICD-11 coding system.
@@ -178,3 +190,46 @@ This log records design decisions, options evaluated, empirical measurements, an
   2. *Explicit Negation Guardrail (Selected):* Instructs the LLM to ignore differentials that tested negative.
 * **Measurement / Rationale:** Successfully resolved the `dev-002` misclassification failure mode.
 * **What to Revisit with More Time:** Integrate NegEx dependency parsing.
+
+
+## Audit correction and implementation — 2026-11-07
+The earlier entries describe intentions and estimates, not independently verified guarantees. Baseline revision 9186be4 reproduced 18.8/75 offline; dev-002 still returned malaria. Candidate restriction and concurrency were not enforced. This entry corrects those claims without rewriting history.
+
+### Decision 15: deterministic text and selection boundaries
+Use token-boundary abbreviation expansion and conservative explicit-negation filtering. Remove ambiguous age/ge/add/al expansions. Prefer explicit diagnostic sections. Enforce JSON types, candidate membership and deduplication; preserve short model selections rather than unconditionally padding. Alternative: trust prompt instructions. Rejected after parser probes accepted an unrelated code and malformed output raised exceptions. Regression tests cover these paths. Negation remains heuristic and incomplete, especially across languages.
+
+### Decision 16: shared offline fallback and bounded workers
+Use four async workers with serialized CPU retrieval in a thread and immediate writes. Reuse retrieved candidates on provider failure. Remove the MG26 fever sentinel. Empty/non-string text retains its ID with empty codes and a diagnostic. Malformed JSON/duplicate IDs fail before opening output. Valid nonempty notes retain offline predictions. This intentionally changes the former unsupported clinical fallback. The official output schema and supplied scoring data are unchanged.
+
+### Decision 17: budget reservations
+Use fixed gpt-4o-mini / Claude Haiku 4.5 models with SDK retries disabled. Before dispatch reserve at $2 input/$10 output per million, using UTF-8 byte length plus 1024 framing tokens and 150 maximum output tokens. This deliberately overestimates standard rates. Retain reservations on errors; default allowance $5.50 and reject settings above $6. Large requests or exhausted reservations fall back offline. This may underuse available credit; measured token accounting could improve utilization later. Provider billing limits remain authoritative, and the allowance resets for each CLI invocation. Prices must be revisited when models or provider pricing change.
+
+### Decision 18: evaluation integrity and reproducibility
+Correct three synthetic labels against bundled MMS titles. Quarantine gen-004 for expert review instead of guessing a bacterial-to-morphological mapping. Keep the supplied scorer/dev labels/allowlist unchanged. Freeze tested dependencies and verify model/data/embedding hashes before dense retrieval. On mismatch use BM25 with a warning. No live API accuracy or cost claims are made without a key. The emulator catalog at v0.0.1 lacks these providers; use official SDK HTTP transport contract tests.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 19: measured retrieval comparison and SDK correction
+At implementation commit 6d550c2, hybrid dev score was 19.2/75 (top1 21.7%, top3 33.3%, recall@20 56.7%); BM25-only scored 18.3/75 (recall@20 35%). Retain hybrid. Corrected nine-note synthetic set scored 13.9/25; its changed labels/count prevent comparison to the old score. A new 24-case exact-title EN/ES/FR smoke set scored 15.6/25; this checks retrieval plumbing, not independent clinical generalisation. No tuning was performed on the smoke set. SDK transport tests found Anthropic 2.6.0 uses httpx2 and rejects the legacy temperature parameter; removed it and selected standard_only service tier. Preserve no retries and failure reservations. Live provider quality remains unmeasured.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 20: final validation and scoped exclusions
+Dense-only ablation scored 16.7/75 (recall@20 56.7%), so hybrid remains preferred over both individual rankers. Twelve regression tests pass, including actual packaged-model dev-002 and positive malaria cases. Expand SDK tests to 401 and synthetic read timeouts. Tighten excluded-condition matching to whole phrases so “heart disease” does not remove unrelated disease categories; exhaustive comparison across all dev notes and all category titles found zero changed exclusion decisions, preserving the dev/load results. The exact Compose build and CLI run passed from a fresh clone, scoring 19.2/75 on 60 notes. Source commit d1bd2b9 supplies token counters; these count only received responses, while reservations cover failures too. Live proxy connectivity and clinical online accuracy remain unverified without recruiter credentials.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 21: final scoring correction and provider proxy verification
+Final stable-source evaluation and Compose execution both score 19.6/75 (21.7% top1, 35.0% top3; recall@20 56.7%). Earlier 19.2 results used diagnostic concatenation before its whitespace correction; final results supersede them. Both SDKs honor HTTPS_PROXY in a local CONNECT-denial test, proving routing without sending requests to a live provider. Success, 401, 429, 500 and timeout fixtures pass with no SDK retries. Official OpenAI pricing confirms $0.15/$0.60 for GPT-4o mini; its published shutdown is January 14, 2027. Retain it for the current three-day assignment window; a later evaluation requires model/pricing revalidation. Anthropic standard pricing for Haiku4.5 is $1/$5. Application reservation rates deliberately exceed both. Provider account billing limits remain authoritative.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 22: submission load check
+A 600-record repetition fixture (unique IDs, original 60 notes repeated) completed in 239.67 seconds in a network-disabled container. All 600 rows had unique expected IDs and one to three allowlisted codes, and every output matched final-source dev predictions. This is a throughput/coverage test, not new accuracy evidence. The image used d1bd2b9; the later phrase-exclusion refinement was independently proven equivalent over every dev/category pair, and final-source dev predictions were compared against all 600 outputs. Final-source clean-clone Compose build also passed. No paid API calls were made.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
