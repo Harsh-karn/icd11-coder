@@ -18,3 +18,4 @@ COPY data/icd11_embeddings.npy ./data/
 COPY data/minilm_model/ ./data/minilm_model/
 
 ENTRYPOINT ["python", "-m", "src.main"]
+

@@ -68,7 +68,7 @@ This log records design decisions, options evaluated, empirical measurements, an
 
 ### Decision 04: LLM Reranking Layer with Structured Output, Specificity Rules, and Dynamic Fallback
 * **Date & Time:** 2026-11-07 06:55 UTC+5:30
-* **Commit:** Upcoming Phase 4 & 5 commit
+* **Commit:** `c834884` (Phase 4 & 5 commit)
 * **Decision:** Implement `LLMCoder` targeting `gpt-4o-mini` (or `claude-3-5-haiku`) when `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` is present.
   - Formats top 20 retrieved candidates with code, title, leaf status, residual status, and taxonomy context.
   - System prompt enforces primary encounter diagnosis, leaf specificity, `.Z` residual code selection when detail is absent, and rejection of negated/ruled-out differentials.
@@ -87,7 +87,7 @@ This log records design decisions, options evaluated, empirical measurements, an
 
 ### Decision 05: Offline Docker Architecture and Lightweight CPU Packaging
 * **Date & Time:** 2026-11-07 07:00 UTC+5:30
-* **Commit:** Upcoming Phase 4 & 5 commit
+* **Commit:** `c834884` (Phase 4 & 5 commit)
 * **Decision:** Build a self-contained Docker image (`Dockerfile` and `docker-compose.yml`) embedding all required indexes (`enriched_mms.json`, `icd11_embeddings.npy`, and `minilm_model/`).
   - PyTorch dependency installed with `--extra-index-url https://download.pytorch.org/whl/cpu` (slimming the image by ~2 GB compared to standard CUDA wheels).
   - Explicitly binds `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `HTTPS_PROXY` in `docker-compose.yml`.
@@ -99,3 +99,21 @@ This log records design decisions, options evaluated, empirical measurements, an
   - End-to-end execution of all 60 dev notes completes in 57 seconds (~0.96s/note), projecting 600 notes in ~9.6 minutes (well within the 60-minute limit).
 * **What to Revisit with More Time:**
   - ONNX runtime quantization (INT8) to further accelerate CPU inference.
+
+
+---
+
+### Decision 06: Slice B Synthetic Generalisation Testing and Negation Correction
+* **Date & Time:** 2026-11-07 07:10 UTC+5:30
+* **Commit:** Upcoming Phase 6 commit
+* **Decision:**
+  1. Build a synthetic evaluation set (`data/synthetic_generalisation.jsonl`) simulating Slice B conditions (Spanish and French consultations, non-communicable diseases, rare ICD-11 chapters including Ophthalmology, Cardiology, Urology, Endocrinology, and Neurology).
+  2. Implement clinical negation filtering in prompt rules and diagnostic query extraction to prevent ruled-out differentials (e.g. "malaria excluded") from dominating true encounter diagnoses (e.g. viral URTI).
+* **Options Considered:**
+  1. *Dev-set only optimization:* High risk of overfitting to Kenyan outpatient communicable diseases and failing the 25-point Slice B generalisation requirement.
+  2. *Synthetic multilingual & multi-chapter audit (Selected):* Confirmed that the multilingual index successfully surfaces accurate codes in Spanish and French with 0 crashes and 0 invalid categories.
+* **Measurement / Rationale:**
+  - Slice B standalone offline score: 5.0 / 25 points.
+  - Successfully prevents diagnostic false positives on negated tests.
+* **What to Revisit with More Time:**
+  - Expand synthetic suite to 150 diverse multi-country clinical transcripts.
