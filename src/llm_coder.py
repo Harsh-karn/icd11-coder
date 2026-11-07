@@ -45,6 +45,8 @@ class LLMCoder:
         self.remaining = budget
         self.reserved = 0.0
         self.calls = 0
+        self.input_tokens = 0
+        self.output_tokens = 0
         self.async_openai = self.async_anthropic = None
         if os.getenv("OPENAI_API_KEY"):
             self.async_openai = AsyncOpenAI(max_retries=0, timeout=10)
@@ -86,12 +88,16 @@ class LLMCoder:
                             {"role": "system", "content": SYSTEM_PROMPT},
                             {"role": "user", "content": prompt}],
                         response_format={"type": "json_object"}, temperature=0, max_tokens=150)
+                    self.input_tokens += getattr(response.usage, "prompt_tokens", 0) or 0
+                    self.output_tokens += getattr(response.usage, "completion_tokens", 0) or 0
                     text = response.choices[0].message.content
                 else:
                     response = await self.async_anthropic.messages.create(
                         model="claude-haiku-4-5-20251001", system=SYSTEM_PROMPT,
                         messages=[{"role": "user", "content": prompt}],
                         max_tokens=150, service_tier="standard_only")
+                    self.input_tokens += getattr(response.usage, "input_tokens", 0) or 0
+                    self.output_tokens += getattr(response.usage, "output_tokens", 0) or 0
                     text = "".join(b.text for b in response.content if b.type == "text")
             codes = self._parse_and_validate(text, candidates)
             if not codes:

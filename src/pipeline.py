@@ -58,7 +58,9 @@ class ICD11Pipeline:
                         tasks.create_task(worker())
             finally:
                 await self.llm.close()
-                logging.warning("LLM requests=%d reserved_usd=%.4f", self.llm.calls, self.llm.reserved)
+                logging.warning("LLM requests=%d reserved_usd=%.4f input_tokens=%d output_tokens=%d",
+                                self.llm.calls, self.llm.reserved,
+                                getattr(self.llm, "input_tokens", 0), getattr(self.llm, "output_tokens", 0))
 
     def process_file(self, input_path, output_path, concurrency=4):
         notes = []

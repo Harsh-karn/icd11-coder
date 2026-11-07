@@ -33,6 +33,8 @@ class Providers(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(['CA00'] if status==200 else [],result)
                 self.assertEqual(1,len(seen));self.assertEqual(150,seen[0]['max_tokens'])
                 self.assertGreater(coder.reserved,0)
+                self.assertEqual(10 if status == 200 else 0, coder.input_tokens)
+                self.assertEqual(8 if status == 200 else 0, coder.output_tokens)
                 await coder.close()
 
     async def test_budget_concurrent_requests(self):
