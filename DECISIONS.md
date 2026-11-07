@@ -105,7 +105,7 @@ This log records design decisions, options evaluated, empirical measurements, an
 
 ### Decision 06: Slice B Synthetic Generalisation Testing and Negation Correction
 * **Date & Time:** 2026-11-07 07:10 UTC+5:30
-* **Commit:** Upcoming Phase 6 commit
+* **Commit:** `c17f1c1` (Phase 6 commit)
 * **Decision:**
   1. Build a synthetic evaluation set (`data/synthetic_generalisation.jsonl`) simulating Slice B conditions (Spanish and French consultations, non-communicable diseases, rare ICD-11 chapters including Ophthalmology, Cardiology, Urology, Endocrinology, and Neurology).
   2. Implement clinical negation filtering in prompt rules and diagnostic query extraction to prevent ruled-out differentials (e.g. "malaria excluded") from dominating true encounter diagnoses (e.g. viral URTI).
