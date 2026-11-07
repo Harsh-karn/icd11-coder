@@ -48,3 +48,7 @@ out/
 
 # Downloaded raw WHO files
 data/downloads/
+
+# Bundle split parts
+bundle files/
+bundle_parts/

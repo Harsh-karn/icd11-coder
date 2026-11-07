@@ -1,8 +1,3 @@
-<!-- coderabbit-ai-generated:v1 -->
-
-<!-- coderabbit-ai-generated-section:v1:9e31c13a73885f11b9e38045c037f84dbce45936dd027c294805a39b3b4f675b -->
-
-<!-- coderabbit-ai-generated-section:v1:cae59e9d9afcff5a61d1627abc3ee0e48e6c47e4de170ff44e23201f85a95b7a -->
 
 # ICD-11 coding assignment
 
@@ -42,10 +37,10 @@ AI tooling mistake caught: documented negation handling was unused; dev-002 stil
 
 Tests: `python -m unittest discover -s tests -v`. Evaluation: `python scripts/evaluate.py --output out/eval.jsonl`. Malformed JSON or duplicate IDs fail explicitly; unusable text retains its ID with empty codes and a stderr diagnostic.
 
-Time: original implementation reported ~7 hours; automated remediation took approximately 0.25 hours of wall-clock execution, separately from that original estimate.
+Time: original implementation reported ~14 hours; automated remediation took approximately 0.25 hours of wall-clock execution, separately from that original estimate.
 
 
-<!-- /coderabbit-ai-generated:v1 -->
+
 OpenAI lists GPT-4o mini for shutdown on January 14, 2027; revalidate the model and budget assumptions if evaluating after that date ([notice](https://developers.openai.com/api/docs/deprecations)).
 
 ---

@@ -37,7 +37,10 @@ class ICD11Retriever:
                 manifest_path = Path(emb_path).with_suffix(".manifest.json")
                 manifest = json.loads(manifest_path.read_text())
                 for file, expected in manifest.items():
-                    actual = hashlib.sha256((Path(enriched_path).parent / file).read_bytes()).hexdigest()
+                    raw = (Path(enriched_path).parent / file).read_bytes()
+                    if file.endswith((".json", ".md", ".txt")):
+                        raw = raw.replace(b"\r\n", b"\n")
+                    actual = hashlib.sha256(raw).hexdigest()
                     if actual != expected:
                         raise ValueError("artifact checksum mismatch: " + file)
                 self.dense_embeddings = np.load(emb_path, allow_pickle=False)
