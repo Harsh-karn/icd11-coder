@@ -1,0 +1,14 @@
+{
+  "enriched_mms.json": "2872460e40b61425e85c558f6f57c226cb247365454ac1ad9009ac2b12e64172",
+  "icd11_embeddings.npy": "b65ce26dee4ee04b6eedbede60f99e7cdf397ceddd4f77de00b70143789a1c4d",
+  "minilm_model/README.md": "dcd602d2fd35c203a247304a06fec6654a12f7941b739f9221a064fe8dc3b7f0",
+  "minilm_model/config.json": "b6fb0930a64474449442073d24c029d9e09ff41037a3dd5e27f7fe52139faa66",
+  "minilm_model/config_sentence_transformers.json": "f06c4bb1f347c40a617e40cae2247c37f0e4542914a4b9fd424662e7e0bbd3df",
+  "minilm_model/model.safetensors": "1377e9af0ca0b016a9f2aa584d6fc71ab3ea6804fae21ef9fb1416e2944057ac",
+  "minilm_model/modules.json": "3d02572a0455b832de67fb8e63a54981bc7e8b46e337c95e917bd8122a533bfd",
+  "minilm_model/sentence_bert_config.json": "3084164002c0bca01b0259c5327123803fce32e660a57feb93184ffead186fc8",
+  "minilm_model/tokenizer.json": "da0e79933b9ed51798a3ae27893d3c5fa4a201126cef75586296df9b4d2c62a0",
+  "minilm_model/tokenizer_config.json": "4817907ff3846ed899a62cccad0193c21d0792130c6139d8362187153eeff283",
+  "minilm_model/1_Pooling/config.json": "4fef0a7e8c8ee36e74c0fad89bab60ade72324442d43f559ea219bb7c2580710",
+  "minilm_model/2_Normalize/config.json": "cdb09dfca347a56aa2d691744e38d5ad3c7cbc2834e7181272b9a15328b82524"
+}

@@ -1,3 +1,7 @@
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:7eab0bdfa892f9c2f783944dc1ce6d0cadbe8e531b8b3622613a7abfcfa5bd3a -->
+
 # Architectural and Technical Decision Log (`DECISIONS.md`)
 
 This log records design decisions, options evaluated, empirical measurements, and trade-offs made throughout the development of the ICD-11 coding system.
@@ -178,3 +182,22 @@ This log records design decisions, options evaluated, empirical measurements, an
   2. *Explicit Negation Guardrail (Selected):* Instructs the LLM to ignore differentials that tested negative.
 * **Measurement / Rationale:** Successfully resolved the `dev-002` misclassification failure mode.
 * **What to Revisit with More Time:** Integrate NegEx dependency parsing.
+
+
+## Audit correction and implementation — 2026-11-07
+The earlier entries describe intentions and estimates, not independently verified guarantees. Baseline revision 9186be4 reproduced 18.8/75 offline; dev-002 still returned malaria. Candidate restriction and concurrency were not enforced. This entry corrects those claims without rewriting history.
+
+### Decision 15: deterministic text and selection boundaries
+Use token-boundary abbreviation expansion and conservative explicit-negation filtering. Remove ambiguous age/ge/add/al expansions. Prefer explicit diagnostic sections. Enforce JSON types, candidate membership and deduplication; preserve short model selections rather than unconditionally padding. Alternative: trust prompt instructions. Rejected after parser probes accepted an unrelated code and malformed output raised exceptions. Regression tests cover these paths. Negation remains heuristic and incomplete, especially across languages.
+
+### Decision 16: shared offline fallback and bounded workers
+Use four async workers with serialized CPU retrieval in a thread and immediate writes. Reuse retrieved candidates on provider failure. Remove the MG26 fever sentinel. Empty/non-string text retains its ID with empty codes and a diagnostic. Malformed JSON/duplicate IDs fail before opening output. Valid nonempty notes retain offline predictions. This intentionally changes the former unsupported clinical fallback. The official output schema and supplied scoring data are unchanged.
+
+### Decision 17: budget reservations
+Use fixed gpt-4o-mini / Claude Haiku 4.5 models with SDK retries disabled. Before dispatch reserve at $2 input/$10 output per million, using UTF-8 byte length plus 1024 framing tokens and 150 maximum output tokens. This deliberately overestimates standard rates. Retain reservations on errors; default allowance $5.50 and reject settings above $6. Large requests or exhausted reservations fall back offline. This may underuse available credit; measured token accounting could improve utilization later. Provider billing limits remain authoritative, and the allowance resets for each CLI invocation. Prices must be revisited when models or provider pricing change.
+
+### Decision 18: evaluation integrity and reproducibility
+Correct three synthetic labels against bundled MMS titles. Quarantine gen-004 for expert review instead of guessing a bacterial-to-morphological mapping. Keep the supplied scorer/dev labels/allowlist unchanged. Freeze tested dependencies and verify model/data/embedding hashes before dense retrieval. On mismatch use BM25 with a warning. No live API accuracy or cost claims are made without a key. The emulator catalog at v0.0.1 lacks these providers; use official SDK HTTP transport contract tests.
+
+
+<!-- /coderabbit-ai-generated:v1 -->

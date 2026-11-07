@@ -1,40 +1,22 @@
+"""Conservative explicit-negation handling; not a clinical NLP parser."""
 import re
 
-# Negation patterns to down-weight ruled-out conditions
-NEGATION_PATTERNS = [
-    re.compile(r"(\b[a-zA-Z\s]+?)\s+(?:excluded|ruled\s+out|neg|negative|unlikely)\b", re.IGNORECASE),
-    re.compile(r"\b(?:no\s+evidence\s+of|negative\s+for|rules\s+out|not)\s+([a-zA-Z\s]+)", re.IGNORECASE),
-]
+WORD = r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ-]*"
+NEGATION = re.compile(
+    rf"\b(?:no evidence of|no history of|negative for|denies|without)\s+({WORD}(?:\s+{WORD}){{0,2}})(?=[,;.!\n]|$)"
+    rf"|\b({WORD})\s+(?:excluded|ruled out|unlikely)\b", re.I)
 
-def extract_diagnostic_query(text: str) -> str:
-    """Extract the primary diagnostic focus from a clinical note."""
-    lines = text.split("\n")
-    diag_lines = []
-    
-    # 1. Direct Assessment / Impression / Diagnosis fields
-    for line in lines:
-        l = line.strip()
-        if re.match(r"^(?:A|Dx|Assessment|Impression|Diag)\s*[:\-\.]", l, re.IGNORECASE):
-            diag_lines.append(l)
-        elif "Dx:" in l or "dx:" in l or "Dx " in l or "A:" in l:
-            diag_lines.append(l)
+def excluded_terms(text):
+    return {word.lower() for match in NEGATION.finditer(text)
+            for word in (match.group(1) or match.group(2)).split()
+            if word.lower() not in {"of", "the", "a", "history"}}
 
-    # 2. Key doctor statements in ambient consultations
-    for line in lines:
-        l = line.strip()
-        if l.lower().startswith("doctor:"):
-            # Check for conclusive clinical statements
-            if any(k in l.lower() for k in [
-                "this is", "have an", "diagnosed with", "sounds like", "attack",
-                "malaria", "pneumonia", "asthma", "bronchitis", "tonsillitis",
-                "chickenpox", "shingles", "measles", "gastroenteritis", "infection",
-                "abscess", "ulcer", "fracture", "hypertension", "diabetes", "nebs", "inhaler"
-            ]):
-                diag_lines.append(l)
-
-    if diag_lines:
-        # Give higher weight to diagnosis lines by repeating them
-        combined = " ".join(diag_lines) + " " + " ".join(diag_lines) + " " + text
-        return combined
-
-    return text
+def extract_diagnostic_query(text):
+    clean = NEGATION.sub(" ", text)
+    # Explicit diagnosis takes priority over symptoms, tests and treatment.
+    sections = re.findall(
+        r"(?:\b(?:Dx|Diagnosis|Diagnostic|Diagnóstico|Assessment|Impression)|(?:^|\n)A)\s*[:.-]\s*([^\n;]+)",
+        clean, re.I)
+    if sections:
+        return " ".join(sections + sections)
+    return clean

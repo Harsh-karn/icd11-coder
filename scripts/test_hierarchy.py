@@ -31,6 +31,7 @@ for sample in ['1A00', 'CA23.30', '1F40.Z', 'CA40.Z', '1A07.Z', 'CA07.0']:
         if gid and gid in blocks:
             ancestors.append(blocks[gid])
     print(f"\nCode {sample}:")
-    print(f"  Title: {r.get('Title', '').strip('\"').lstrip('- ')}")
+    title = r.get("Title", "").strip(chr(34)).lstrip("- ")
+    print(f"  Title: {title}")
     print(f"  Hierarchy: {' -> '.join(ancestors)}")
     print(f"  isLeaf: {r.get('isLeaf')}, IsResidual: {r.get('IsResidual')}")

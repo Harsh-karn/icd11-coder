@@ -14,7 +14,7 @@ try:
         print("Fetch URLs:", set(fetches))
         # Look for words like getConcept, details, concept
         keywords = re.findall(r'/[a-zA-Z0-9_\-\./]*(?:concept|detail|search|node)[a-zA-Z0-9_\-\./]*', content, re.IGNORECASE)
-        print("Keywords:", set(keywords)[:15])
+        print("Keywords:", sorted(set(keywords))[:15])
 except Exception as e:
     print("Error:", e)
 

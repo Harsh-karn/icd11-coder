@@ -1,11 +1,13 @@
 import json
 import os
 import re
+import hashlib
+from pathlib import Path
 import numpy as np
 from typing import List, Dict, Any, Tuple
 from sentence_transformers import SentenceTransformer
 from src.bm25 import BM25Okapi, tokenize
-from src.query_extractor import extract_diagnostic_query
+from src.query_extractor import extract_diagnostic_query, excluded_terms
 
 class ICD11Retriever:
     def __init__(
@@ -32,7 +34,15 @@ class ICD11Retriever:
         self.embed_model = None
         if os.path.exists(emb_path) and os.path.exists(model_path):
             try:
-                self.dense_embeddings = np.load(emb_path)
+                manifest_path = Path(emb_path).with_suffix(".manifest.json")
+                manifest = json.loads(manifest_path.read_text())
+                for file, expected in manifest.items():
+                    actual = hashlib.sha256((Path(enriched_path).parent / file).read_bytes()).hexdigest()
+                    if actual != expected:
+                        raise ValueError("artifact checksum mismatch: " + file)
+                self.dense_embeddings = np.load(emb_path, allow_pickle=False)
+                if self.dense_embeddings.shape != (len(self.categories), 384):
+                    raise ValueError("embedding shape mismatch")
                 os.environ["HF_HUB_OFFLINE"] = "1"
                 os.environ["TRANSFORMERS_OFFLINE"] = "1"
                 self.embed_model = SentenceTransformer(model_path)
@@ -41,6 +51,9 @@ class ICD11Retriever:
 
     def retrieve(self, note_text: str, top_n: int = 25) -> List[Dict[str, Any]]:
         """Retrieve top candidate ICD-11 categories using hybrid BM25 + Dense similarity."""
+        if not isinstance(note_text, str) or not note_text.strip() or top_n <= 0:
+            return []
+        excluded = excluded_terms(note_text)
         diag_query = extract_diagnostic_query(note_text)
         query_tokens = tokenize(diag_query, expand_abbreviations=True)
         
@@ -77,16 +90,18 @@ class ICD11Retriever:
             else:
                 adjusted_scores[idx] *= 0.35
                 
-            if is_leaf and is_residual:
+            if is_leaf and is_residual and "unspecified" in cat["title"].lower():
                 # Slight bump for .Z unspecified codes when exact subtype is omitted
                 adjusted_scores[idx] *= 1.04
 
         # Rank candidates
-        top_indices = np.argsort(adjusted_scores)[::-1][:top_n * 2]
+        top_indices = np.argsort(adjusted_scores)[::-1]
         
         candidates = []
         for idx in top_indices:
             cat = self.categories[idx]
+            if excluded.intersection(tokenize(cat["title"], expand_abbreviations=False)):
+                continue
             candidates.append({
                 "code": cat["code"],
                 "title": cat["title"],
@@ -95,6 +110,7 @@ class ICD11Retriever:
                 "hierarchy": cat["hierarchy"],
                 "leaf": cat["leaf"],
                 "residual": cat["residual"],
+                "coding_note": cat.get("coding_note", ""),
                 "raw_bm25": float(bm25_scores[idx]),
                 "score": float(adjusted_scores[idx])
             })
@@ -106,8 +122,11 @@ class ICD11Retriever:
     def predict_offline(self, note_text: str, max_codes: int = 3) -> List[str]:
         """Offline prediction using hybrid ranker with leaf-first priority."""
         candidates = self.retrieve(note_text, top_n=20)
+        return self.select_offline(candidates, max_codes)
+
+    def select_offline(self, candidates, max_codes=3):
         if not candidates:
-            return ["MG26"]  # General symptom fallback
+            return []
 
         # Prioritize leaves
         leaf_cands = [c for c in candidates if c["leaf"]]
