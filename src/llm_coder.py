@@ -91,7 +91,7 @@ class LLMCoder:
                     response = await self.async_anthropic.messages.create(
                         model="claude-haiku-4-5-20251001", system=SYSTEM_PROMPT,
                         messages=[{"role": "user", "content": prompt}],
-                        temperature=0, max_tokens=150)
+                        max_tokens=150, service_tier="standard_only")
                     text = "".join(b.text for b in response.content if b.type == "text")
             codes = self._parse_and_validate(text, candidates)
             if not codes:

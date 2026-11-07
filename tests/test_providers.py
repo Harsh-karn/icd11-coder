@@ -5,6 +5,7 @@ import os
 import unittest
 from unittest.mock import patch
 import httpx
+import httpx2
 from openai import AsyncOpenAI
 from anthropic import AsyncAnthropic
 from src.llm_coder import LLMCoder
@@ -13,18 +14,19 @@ class Providers(unittest.IsolatedAsyncioTestCase):
     async def test_sdk_success_and_failure(self):
         for provider in ['openai','anthropic']:
             for status in [200,429,500]:
+                transport_module = httpx if provider == "openai" else httpx2
                 seen=[]
                 def handler(request):
                     seen.append(json.loads(request.content))
                     if status!=200:
-                        return httpx.Response(status,json={'error':{'type':'rate_limit_error','message':'synthetic'}})
+                        return transport_module.Response(status,json={'error':{'type':'rate_limit_error','message':'synthetic'}})
                     if provider=='openai':
                         data={'id':'fixture','object':'chat.completion','created':0,'model':'gpt-4o-mini','choices':[{'index':0,'finish_reason':'stop','message':{'role':'assistant','content':'{"codes":["CA00"]}'}}],'usage':{'prompt_tokens':10,'completion_tokens':8,'total_tokens':18}}
                     else:
                         data={'id':'fixture','type':'message','role':'assistant','model':'claude-haiku-4-5-20251001','content':[{'type':'text','text':'{"codes":["CA00"]}'}],'stop_reason':'end_turn','usage':{'input_tokens':10,'output_tokens':8}}
-                    return httpx.Response(200,json=data)
+                    return transport_module.Response(200,json=data)
                 with patch.dict(os.environ,{},clear=True): coder=LLMCoder({'CA00'})
-                client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+                client=transport_module.AsyncClient(transport=transport_module.MockTransport(handler))
                 sdk=AsyncOpenAI if provider=='openai' else AsyncAnthropic
                 setattr(coder,'async_'+provider,sdk(api_key='synthetic-local-test',http_client=client,max_retries=0))
                 result=await coder.predict_async('Acute nasopharyngitis',[{'code':'CA00','title':'Acute nasopharyngitis'}])

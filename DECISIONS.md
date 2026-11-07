@@ -1,5 +1,7 @@
 <!-- coderabbit-ai-generated:v1 -->
 
+<!-- coderabbit-ai-generated-section:v1:210a3523e58e4c9907ad6fb4a1ee1e774383ece48394342e56fb79619b9b3779 -->
+
 <!-- coderabbit-ai-generated-section:v1:7eab0bdfa892f9c2f783944dc1ce6d0cadbe8e531b8b3622613a7abfcfa5bd3a -->
 
 # Architectural and Technical Decision Log (`DECISIONS.md`)
@@ -198,6 +200,12 @@ Use fixed gpt-4o-mini / Claude Haiku 4.5 models with SDK retries disabled. Befor
 
 ### Decision 18: evaluation integrity and reproducibility
 Correct three synthetic labels against bundled MMS titles. Quarantine gen-004 for expert review instead of guessing a bacterial-to-morphological mapping. Keep the supplied scorer/dev labels/allowlist unchanged. Freeze tested dependencies and verify model/data/embedding hashes before dense retrieval. On mismatch use BM25 with a warning. No live API accuracy or cost claims are made without a key. The emulator catalog at v0.0.1 lacks these providers; use official SDK HTTP transport contract tests.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 19: measured retrieval comparison and SDK correction
+At implementation commit 6d550c2, hybrid dev score was 19.2/75 (top1 21.7%, top3 33.3%, recall@20 56.7%); BM25-only scored 18.3/75 (recall@20 35%). Retain hybrid. Corrected nine-note synthetic set scored 13.9/25; its changed labels/count prevent comparison to the old score. A new 24-case exact-title EN/ES/FR smoke set scored 15.6/25; this checks retrieval plumbing, not independent clinical generalisation. No tuning was performed on the smoke set. SDK transport tests found Anthropic 2.6.0 uses httpx2 and rejects the legacy temperature parameter; removed it and selected standard_only service tier. Preserve no retries and failure reservations. Live provider quality remains unmeasured.
 
 
 <!-- /coderabbit-ai-generated:v1 -->
