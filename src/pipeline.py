@@ -25,59 +25,40 @@ class ICD11Pipeline:
         print(f"Pipeline ready. LLM available: {self.llm.is_available}")
 
     def predict_note(self, note_text: str) -> List[str]:
-        """Predict top 1-3 codes for a single note."""
-        # Step 1: Candidate retrieval
+        """Synchronous prediction for a single note."""
         candidates = self.retriever.retrieve(note_text, top_n=20)
-        
-        # Step 2: LLM reranking if key is available
         if self.llm.is_available:
             codes = self.llm.predict_sync(note_text, candidates)
             if codes:
                 return codes
-
-        # Step 3: High-speed offline fallback
         return self.retriever.predict_offline(note_text, max_codes=3)
 
-    def process_file(self, input_path: str, output_path: str, concurrency: int = 5):
-        """Process an input JSONL file and write streaming predictions to output_path."""
-        if not os.path.exists(input_path):
-            raise FileNotFoundError(f"Input file not found: {input_path}")
+    async def predict_note_async(self, note_text: str, sem: asyncio.Semaphore) -> List[str]:
+        """Asynchronous prediction with concurrency rate-limiting semaphore."""
+        candidates = self.retriever.retrieve(note_text, top_n=20)
+        if self.llm.is_available:
+            async with sem:
+                codes = await self.llm.predict_async(note_text, candidates)
+                if codes:
+                    return codes
+        return self.retriever.predict_offline(note_text, max_codes=3)
 
-        # Ensure output directory exists
-        out_dir = os.path.dirname(output_path)
-        if out_dir:
-            os.makedirs(out_dir, exist_ok=True)
-
-        # Read input notes
-        notes = []
-        with open(input_path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    try:
-                        notes.append(json.loads(line))
-                    except Exception:
-                        continue
-
+    async def process_async(self, notes: List[Dict[str, Any]], output_path: str, concurrency: int = 8):
+        """Process notes asynchronously with an asyncio.Semaphore(limit=8)."""
+        sem = asyncio.Semaphore(concurrency)
         total_notes = len(notes)
-        print(f"Processing {total_notes} notes -> {output_path}...")
         start_time = time.time()
 
-        # Open output file in append mode and write streaming results
         with open(output_path, "w", encoding="utf-8") as out_f:
             for idx, note in enumerate(notes, 1):
                 note_id = note.get("id", f"note-{idx}")
                 note_text = note.get("text", "")
 
                 try:
-                    codes = self.predict_note(note_text)
-                    if not codes:
-                        codes = ["MG26"]  # Fallback
+                    codes = await self.predict_note_async(note_text, sem)
                 except Exception as e:
-                    print(f"Error on note {note_id}: {e}")
                     codes = ["MG26"]
 
-                # Ensure only valid codes are output
                 valid_preds = [c for c in codes if c in self.retriever.valid_codes][:3]
                 if not valid_preds:
                     valid_preds = ["MG26"]
@@ -91,6 +72,41 @@ class ICD11Pipeline:
                     rate = idx / max(0.1, elapsed)
                     print(f"[{idx}/{total_notes}] completed ({elapsed:.1f}s, {rate:.1f} notes/sec)")
 
-        total_elapsed = time.time() - start_time
-        print(f"Done. Processed {total_notes} notes in {total_elapsed:.2f}s ({total_elapsed/max(1, total_notes):.3f}s/note).")
+    def process_file(self, input_path: str, output_path: str, concurrency: int = 8):
+        """Process an input JSONL file and write streaming predictions to output_path."""
+        if not os.path.exists(input_path):
+            raise FileNotFoundError(f"Input file not found: {input_path}")
 
+        out_dir = os.path.dirname(output_path)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+
+        notes = []
+        with open(input_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        notes.append(json.loads(line))
+                    except Exception:
+                        continue
+
+        if self.llm.is_available:
+            asyncio.run(self.process_async(notes, output_path, concurrency=concurrency))
+        else:
+            # High-speed synchronous offline runner
+            start_time = time.time()
+            total_notes = len(notes)
+            with open(output_path, "w", encoding="utf-8") as out_f:
+                for idx, note in enumerate(notes, 1):
+                    note_id = note.get("id", f"note-{idx}")
+                    note_text = note.get("text", "")
+                    codes = self.retriever.predict_offline(note_text, max_codes=3)
+                    valid_preds = [c for c in codes if c in self.retriever.valid_codes][:3]
+                    if not valid_preds:
+                        valid_preds = ["MG26"]
+                    out_f.write(json.dumps({"id": note_id, "codes": valid_preds}, ensure_ascii=False) + "\n")
+                    out_f.flush()
+                    if idx % 10 == 0 or idx == total_notes:
+                        elapsed = time.time() - start_time
+                        print(f"[{idx}/{total_notes}] completed ({elapsed:.1f}s, {idx/max(0.1, elapsed):.1f} notes/sec)")

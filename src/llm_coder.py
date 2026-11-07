@@ -11,6 +11,7 @@ except ImportError:
     AsyncOpenAI = None
 
 try:
+    # pyrefly: ignore[missing-import]
     from anthropic import Anthropic, AsyncAnthropic
 except ImportError:
     Anthropic = None
