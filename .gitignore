@@ -45,3 +45,6 @@ Thumbs.db
 in/
 out/
 *.bundle
+
+# Downloaded raw WHO files
+data/downloads/

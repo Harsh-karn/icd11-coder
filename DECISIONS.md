@@ -6,7 +6,7 @@ This log records design decisions, options evaluated, empirical measurements, an
 
 ### Decision 01: Two-Stage Hybrid Architecture (Retrieval + LLM Reranking with Offline Fallback)
 * **Date & Time:** 2026-11-07 06:25 UTC+5:30
-* **Commit:** Initial commit
+* **Commit:** `e1bad76` (Initial commit)
 * **Decision:** Adopt a two-stage hybrid pipeline:
   1. **Stage 1 (Offline Candidate Retrieval):** Enriched ICD-11 metadata indexed with BM25 keyword search and dense semantic vector similarity to retrieve the top 20–25 candidate codes in <50ms on CPU.
   2. **Stage 2 (Online LLM Reranker & Selector):** If an API key (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`) is present, call a high-speed, cost-efficient model (`gpt-4o-mini` or `claude-3-5-haiku`) to select up to 3 ordered codes adhering to ICD-11 leaf and `.Z` residual rules.
@@ -20,3 +20,24 @@ This log records design decisions, options evaluated, empirical measurements, an
   - Satisfies the hard constraint: *"With no key set, the system must still produce an answer for every note."*
 * **What to Revisit with More Time:**
   - Fine-tune a lightweight local cross-encoder or biomedical bi-encoder (e.g. Bio_ClinicalBERT / SapBERT) to narrow the gap between the online and offline pipelines.
+
+
+---
+
+### Decision 02: ICD-11 Knowledge Base Enrichment via WHO 2026-01 Multilingual Tabulations
+* **Date & Time:** 2026-11-07 06:35 UTC+5:30
+* **Commit:** Upcoming Phase 2 commit
+* **Decision:** Build an enriched offline dataset (`data/enriched_mms.json`) joining the starter `mms-2026-01.json` with the official WHO 2026-01 SimpleTabulation datasets across English, Spanish, and French. Each code record is enriched with:
+  - 5-level hierarchical ancestor taxonomy (`Grouping1` through `Grouping5` + Chapter)
+  - Full translations for titles and block hierarchies in Spanish and French (for Slice B generalisation)
+  - Verified leaf status and `.Z`/`.X` residual categorization
+  - Official WHO coding notes and instructions
+* **Options Considered:**
+  1. *Titles only (starter `mms-2026-01.json`):* Rejected. Raw titles lack anatomical and pathophysiological context (e.g. "CA40.Z" says "Pneumonia, organism unspecified", but lacks "Respiratory system > Lung infections"). Furthermore, non-English notes in Slice B would fail completely.
+  2. *Live runtime querying of WHO API:* Prohibited by grading rules (network access is strictly locked to OpenAI and Anthropic endpoints only).
+  3. *Pre-compiled Multilingual Hierarchical Knowledge Base (Selected):* Matches 18,375 of 18,375 codes (100.0% coverage). Shipped directly in the image.
+* **Measurement / Rationale:**
+  - 100% of the 18,375 scoring categories were enriched with full taxonomic paths and multi-language mappings.
+  - Directly addresses the Generalisation (Slice B, 25 points) requirement for non-English visits and rare chapters.
+* **What to Revisit with More Time:**
+  - Add clinical alias cross-walks (e.g., SNOMED CT to ICD-11 mapping tables and international brand-name medication dictionaries).
