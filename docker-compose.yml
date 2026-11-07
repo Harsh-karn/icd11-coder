@@ -1,0 +1,15 @@
+services:
+  coder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - OPENAI_API_KEY
+      - ANTHROPIC_API_KEY
+      - HTTPS_PROXY
+      - HTTP_PROXY
+      - https_proxy
+      - http_proxy
+    volumes:
+      - ${IN_DIR:-./in}:/in:ro
+      - ${OUT_DIR:-./out}:/out

@@ -47,7 +47,7 @@ This log records design decisions, options evaluated, empirical measurements, an
 
 ### Decision 03: Hybrid BM25 + Pre-computed MiniLM Dense Vector Retrieval Engine (Offline Path)
 * **Date & Time:** 2026-11-07 06:48 UTC+5:30
-* **Commit:** Upcoming Phase 3 commit
+* **Commit:** `718b950` (Phase 3 commit)
 * **Decision:** Implement a high-speed hybrid retrieval engine combining:
   1. Native Python `BM25Okapi` with clinical abbreviation and colloquial synonym expansion (e.g., `chickenpox` $\leftrightarrow$ `varicella`, `jigger` $\leftrightarrow$ `tungiasis`, `bilharzia` $\leftrightarrow$ `schistosomiasis`, `URTI` $\leftrightarrow$ `acute nasopharyngitis`).
   2. Pre-computed dense embeddings (26.9 MB, 18,375 $\times$ 384 dimensions) using `all-MiniLM-L6-v2`, saved locally to `data/icd11_embeddings.npy` to eliminate all runtime network downloads.
@@ -62,3 +62,40 @@ This log records design decisions, options evaluated, empirical measurements, an
   - Satisfies the no-key constraint with a strong baseline score of 18.8 points out of 75.
 * **What to Revisit with More Time:**
   - Fine-tune embedding weights with a larger synthetic clinical dataset or BM25 hyperparameter tuning ($k_1$, $b$).
+
+
+---
+
+### Decision 04: LLM Reranking Layer with Structured Output, Specificity Rules, and Dynamic Fallback
+* **Date & Time:** 2026-11-07 06:55 UTC+5:30
+* **Commit:** Upcoming Phase 4 & 5 commit
+* **Decision:** Implement `LLMCoder` targeting `gpt-4o-mini` (or `claude-3-5-haiku`) when `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` is present.
+  - Formats top 20 retrieved candidates with code, title, leaf status, residual status, and taxonomy context.
+  - System prompt enforces primary encounter diagnosis, leaf specificity, `.Z` residual code selection when detail is absent, and rejection of negated/ruled-out differentials.
+  - Strict JSON parsing with runtime code validation against `mms-2026-01.json`. If an unlisted code is returned, it is replaced with the next best candidate from Stage 1.
+  - Streaming output: every note prediction is flushed to disk immediately, protecting against timeouts.
+* **Options Considered:**
+  1. *Unconstrained generation:* High risk of hallucinated or legacy ICD-10 codes (which score 0).
+  2. *Candidate-constrained JSON generation (Selected):* Guarantees 100% valid MMS 2026-01 codes.
+* **Measurement / Rationale:**
+  - Token budget: ~1,200 tokens per note $\times$ 600 notes $\approx$ \$0.11 total on `gpt-4o-mini` (under 2% of the \$6.00 cap).
+  - Preserves 100% ID coverage by automatically falling back to Stage 1 offline ranker if API fails or times out.
+* **What to Revisit with More Time:**
+  - Dynamic few-shot prompt injection based on consult style (`ambient_transcript` vs `typed_consult`).
+
+---
+
+### Decision 05: Offline Docker Architecture and Lightweight CPU Packaging
+* **Date & Time:** 2026-11-07 07:00 UTC+5:30
+* **Commit:** Upcoming Phase 4 & 5 commit
+* **Decision:** Build a self-contained Docker image (`Dockerfile` and `docker-compose.yml`) embedding all required indexes (`enriched_mms.json`, `icd11_embeddings.npy`, and `minilm_model/`).
+  - PyTorch dependency installed with `--extra-index-url https://download.pytorch.org/whl/cpu` (slimming the image by ~2 GB compared to standard CUDA wheels).
+  - Explicitly binds `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `HTTPS_PROXY` in `docker-compose.yml`.
+  - Sets `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1` to prevent any runtime HTTP requests.
+* **Options Considered:**
+  1. *Runtime model download:* Strictly prohibited by the brief ("docker compose run cannot reach anything except api.openai.com and api.anthropic.com").
+  2. *Pre-bundling local model and embeddings (Selected):* Guarantees deterministic, zero-network execution.
+* **Measurement / Rationale:**
+  - End-to-end execution of all 60 dev notes completes in 57 seconds (~0.96s/note), projecting 600 notes in ~9.6 minutes (well within the 60-minute limit).
+* **What to Revisit with More Time:**
+  - ONNX runtime quantization (INT8) to further accelerate CPU inference.
