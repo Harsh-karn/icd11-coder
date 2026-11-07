@@ -10,9 +10,15 @@ from src.retriever import ICD11Retriever
 p=argparse.ArgumentParser()
 p.add_argument('--notes',default='data/dev_notes.jsonl')
 p.add_argument('--output',required=True)
-p.add_argument('--bm25-only',action='store_true')
+mode=p.add_mutually_exclusive_group()
+mode.add_argument('--bm25-only',action='store_true')
+mode.add_argument('--dense-only',action='store_true')
 a=p.parse_args()
 r=ICD11Retriever(emb_path='/nonexistent' if a.bm25_only else 'data/icd11_embeddings.npy')
+if a.dense_only:
+    if r.embed_model is None:
+        raise RuntimeError('Dense model unavailable')
+    r.bm25.get_scores=lambda tokens: [0.0] * len(r.categories)
 notes=[json.loads(l) for l in Path(a.notes).read_text().splitlines() if l.strip()]
 hits={k:0 for k in [1,3,5,10,20]}
 Path(a.output).parent.mkdir(parents=True,exist_ok=True)

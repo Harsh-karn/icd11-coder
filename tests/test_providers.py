@@ -13,11 +13,13 @@ from src.llm_coder import LLMCoder
 class Providers(unittest.IsolatedAsyncioTestCase):
     async def test_sdk_success_and_failure(self):
         for provider in ['openai','anthropic']:
-            for status in [200,429,500]:
+            for status in [200,401,429,500,"timeout"]:
                 transport_module = httpx if provider == "openai" else httpx2
                 seen=[]
                 def handler(request):
                     seen.append(json.loads(request.content))
+                    if status == "timeout":
+                        raise transport_module.ReadTimeout("synthetic timeout", request=request)
                     if status!=200:
                         return transport_module.Response(status,json={'error':{'type':'rate_limit_error','message':'synthetic'}})
                     if provider=='openai':

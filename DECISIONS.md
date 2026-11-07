@@ -1,5 +1,7 @@
 <!-- coderabbit-ai-generated:v1 -->
 
+<!-- coderabbit-ai-generated-section:v1:82a115304051829a640de6dac1aff8cc113b09510193486cfc4f44e25e430582 -->
+
 <!-- coderabbit-ai-generated-section:v1:210a3523e58e4c9907ad6fb4a1ee1e774383ece48394342e56fb79619b9b3779 -->
 
 <!-- coderabbit-ai-generated-section:v1:7eab0bdfa892f9c2f783944dc1ce6d0cadbe8e531b8b3622613a7abfcfa5bd3a -->
@@ -206,6 +208,12 @@ Correct three synthetic labels against bundled MMS titles. Quarantine gen-004 fo
 
 ### Decision 19: measured retrieval comparison and SDK correction
 At implementation commit 6d550c2, hybrid dev score was 19.2/75 (top1 21.7%, top3 33.3%, recall@20 56.7%); BM25-only scored 18.3/75 (recall@20 35%). Retain hybrid. Corrected nine-note synthetic set scored 13.9/25; its changed labels/count prevent comparison to the old score. A new 24-case exact-title EN/ES/FR smoke set scored 15.6/25; this checks retrieval plumbing, not independent clinical generalisation. No tuning was performed on the smoke set. SDK transport tests found Anthropic 2.6.0 uses httpx2 and rejects the legacy temperature parameter; removed it and selected standard_only service tier. Preserve no retries and failure reservations. Live provider quality remains unmeasured.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 20: final validation and scoped exclusions
+Dense-only ablation scored 16.7/75 (recall@20 56.7%), so hybrid remains preferred over both individual rankers. Twelve regression tests pass, including actual packaged-model dev-002 and positive malaria cases. Expand SDK tests to 401 and synthetic read timeouts. Tighten excluded-condition matching to whole phrases so “heart disease” does not remove unrelated disease categories; exhaustive comparison across all dev notes and all category titles found zero changed exclusion decisions, preserving the dev/load results. The exact Compose build and CLI run passed from a fresh clone, scoring 19.2/75 on 60 notes. Source commit d1bd2b9 supplies token counters; these count only received responses, while reservations cover failures too. Live proxy connectivity and clinical online accuracy remain unverified without recruiter credentials.
 
 
 <!-- /coderabbit-ai-generated:v1 -->

@@ -7,9 +7,8 @@ NEGATION = re.compile(
     rf"|\b({WORD})\s+(?:excluded|ruled out|unlikely)\b", re.I)
 
 def excluded_terms(text):
-    return {word.lower() for match in NEGATION.finditer(text)
-            for word in (match.group(1) or match.group(2)).split()
-            if word.lower() not in {"of", "the", "a", "history"}}
+    return {" ".join((match.group(1) or match.group(2)).lower().split())
+            for match in NEGATION.finditer(text)}
 
 def extract_diagnostic_query(text):
     clean = NEGATION.sub(" ", text)

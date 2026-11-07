@@ -18,6 +18,7 @@ class Contracts(unittest.TestCase):
         self.assertIn('hipertensión', tokenize('hipertensión'))
 
     def test_negation_scope(self):
+        self.assertEqual({'heart disease'}, excluded_terms('No history of heart disease.'))
         self.assertIn('malaria', excluded_terms('malaria excluded. Viral URTI.'))
         self.assertNotIn('malaria', excluded_terms('Malaria confirmed.'))
         self.assertNotIn('asthma', excluded_terms('Known asthma. No fever. Acute asthma exacerbation.'))

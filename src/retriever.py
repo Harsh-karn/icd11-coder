@@ -100,7 +100,8 @@ class ICD11Retriever:
         candidates = []
         for idx in top_indices:
             cat = self.categories[idx]
-            if excluded.intersection(tokenize(cat["title"], expand_abbreviations=False)):
+            if any(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)",
+                             cat["title"], re.I) for term in excluded):
                 continue
             candidates.append({
                 "code": cat["code"],
