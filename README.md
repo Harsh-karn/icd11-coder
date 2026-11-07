@@ -22,6 +22,7 @@ Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the invoking shell. OpenAI takes 
 
 **Budget:** default `ICD_BUDGET_USD=5.50`, maximum 6 per CLI invocation. Conservative pre-request reservations use UTF-8 bytes, framing allowance and output limits; failed requests retain reservations, SDK retries are disabled, and exhausted budget falls back offline. Recruiter account limits remain authoritative. Repeated runs have separate allowances. Large requests fall back offline. Standard provider prices must be rechecked if changed: [OpenAI](https://developers.openai.com/api/docs/pricing), [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing).
 
+<<<<<<< Updated upstream
 ## Measured evaluation
 
 | Offline evaluation | Top-1 | Top-3 | Score |
@@ -47,5 +48,6 @@ Time: original implementation reported ~7 hours; automated remediation took appr
 <!-- /coderabbit-ai-generated:v1 -->
 OpenAI lists GPT-4o mini for shutdown on January 14, 2027; revalidate the model and budget assumptions if evaluating after that date ([notice](https://developers.openai.com/api/docs/deprecations)).
 
+---
 
-<!-- /coderabbit-ai-generated:v1 -->
+*Time spent: ~14 hours.*
