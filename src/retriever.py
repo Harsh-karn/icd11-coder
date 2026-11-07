@@ -67,7 +67,7 @@ class ICD11Retriever:
 
         # 2. Dense semantic scoring
         if self.embed_model is not None and self.dense_embeddings is not None:
-            # Encode diagnostic query (fast on CPU, <20ms)
+            # Encode the diagnostic query with the packaged model.
             q_emb = self.embed_model.encode([diag_query], normalize_embeddings=True)
             dense_scores = np.dot(self.dense_embeddings, q_emb[0])
             # Dense cosine similarities typically range from 0.2 to 0.9, normalize to [0, 1]
