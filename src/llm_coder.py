@@ -11,7 +11,6 @@ except ImportError:
     AsyncOpenAI = None
 
 try:
-    # pyrefly: ignore[missing-import]
     from anthropic import Anthropic, AsyncAnthropic
 except ImportError:
     Anthropic = None
@@ -53,7 +52,7 @@ class LLMCoder:
         self.async_anthropic = None
 
         if self.openai_key and OpenAI:
-            # Respects HTTPS_PROXY automatically
+            # Respects HTTPS_PROXY automatically via httpx
             self.openai_client = OpenAI(api_key=self.openai_key)
             self.async_openai = AsyncOpenAI(api_key=self.openai_key)
         elif self.anthropic_key and Anthropic:
@@ -74,7 +73,7 @@ class LLMCoder:
         return "\n".join(lines)
 
     def predict_sync(self, note_text: str, candidates: List[Dict[str, Any]]) -> List[str]:
-        """Synchronous single-note prediction using LLM if available, with validation."""
+        """Synchronous single-note prediction with 5.0s timeout and automatic candidate substitution."""
         if not self.is_available or not candidates:
             return []
 
@@ -84,7 +83,6 @@ class LLMCoder:
         response_text = None
         try:
             if self.openai_client:
-                # gpt-4o-mini is ultra-fast and cheap (~$0.15 / 1M input tokens)
                 resp = self.openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
@@ -94,7 +92,7 @@ class LLMCoder:
                     response_format={"type": "json_object"},
                     temperature=0.0,
                     max_tokens=150,
-                    timeout=8.0
+                    timeout=5.0  # 5 second timeout
                 )
                 response_text = resp.choices[0].message.content
             elif self.anthropic_client:
@@ -104,17 +102,16 @@ class LLMCoder:
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=150,
                     temperature=0.0,
-                    timeout=8.0
+                    timeout=5.0  # 5 second timeout
                 )
                 response_text = resp.content[0].text
-        except Exception as e:
-            # Silently fall back to retriever on network / proxy timeout
+        except Exception:
             return []
 
-        return self._parse_and_validate(response_text)
+        return self._parse_and_validate(response_text, candidates)
 
     async def predict_async(self, note_text: str, candidates: List[Dict[str, Any]]) -> List[str]:
-        """Asynchronous single-note prediction with timeout."""
+        """Asynchronous single-note prediction with 5.0s timeout and candidate substitution."""
         if not self.is_available or not candidates:
             return []
 
@@ -135,7 +132,7 @@ class LLMCoder:
                         temperature=0.0,
                         max_tokens=150
                     ),
-                    timeout=7.0
+                    timeout=5.0  # 5 second timeout
                 )
                 response_text = resp.choices[0].message.content
             elif self.async_anthropic:
@@ -147,22 +144,22 @@ class LLMCoder:
                         max_tokens=150,
                         temperature=0.0
                     ),
-                    timeout=7.0
+                    timeout=5.0  # 5 second timeout
                 )
                 response_text = resp.content[0].text
         except Exception:
             return []
 
-        return self._parse_and_validate(response_text)
+        return self._parse_and_validate(response_text, candidates)
 
-    def _parse_and_validate(self, text: Optional[str]) -> List[str]:
+    def _parse_and_validate(self, text: Optional[str], candidates: List[Dict[str, Any]]) -> List[str]:
+        """Parse LLM output, enforce MMS validity, and substitute invalid codes from candidate pool."""
         if not text:
             return []
         try:
             data = json.loads(text)
             raw_codes = data.get("codes", [])
         except Exception:
-            # Fallback regex extraction if json fails
             raw_codes = re.findall(r"\b[0-9][A-Z0-9]+(?:\.[A-Z0-9]+)?\b", text)
 
         valid_predictions = []
@@ -172,6 +169,14 @@ class LLMCoder:
                 valid_predictions.append(clean_c)
             if len(valid_predictions) >= 3:
                 break
-                
-        return valid_predictions
 
+        # Step 2: If LLM produced fewer than valid codes or invalid codes, substitute from candidates
+        if len(valid_predictions) < 3 and candidates:
+            for cand in candidates:
+                ccode = cand["code"].strip().upper()
+                if ccode in self.valid_codes and ccode not in valid_predictions:
+                    valid_predictions.append(ccode)
+                if len(valid_predictions) >= 3:
+                    break
+
+        return valid_predictions
