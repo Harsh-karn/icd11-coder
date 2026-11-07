@@ -1,5 +1,9 @@
 <!-- coderabbit-ai-generated:v1 -->
 
+<!-- coderabbit-ai-generated-section:v1:d5f24e4da6133fd50f84ac1302dab39f9eb611bda02b7345e365994dd91b9799 -->
+
+<!-- coderabbit-ai-generated-section:v1:dabc4d9f5e63e14ac1306d8b74442fd24afcd50acc979ca9b86b9ffde6aa1419 -->
+
 <!-- coderabbit-ai-generated-section:v1:82a115304051829a640de6dac1aff8cc113b09510193486cfc4f44e25e430582 -->
 
 <!-- coderabbit-ai-generated-section:v1:210a3523e58e4c9907ad6fb4a1ee1e774383ece48394342e56fb79619b9b3779 -->
@@ -214,6 +218,18 @@ At implementation commit 6d550c2, hybrid dev score was 19.2/75 (top1 21.7%, top3
 
 ### Decision 20: final validation and scoped exclusions
 Dense-only ablation scored 16.7/75 (recall@20 56.7%), so hybrid remains preferred over both individual rankers. Twelve regression tests pass, including actual packaged-model dev-002 and positive malaria cases. Expand SDK tests to 401 and synthetic read timeouts. Tighten excluded-condition matching to whole phrases so “heart disease” does not remove unrelated disease categories; exhaustive comparison across all dev notes and all category titles found zero changed exclusion decisions, preserving the dev/load results. The exact Compose build and CLI run passed from a fresh clone, scoring 19.2/75 on 60 notes. Source commit d1bd2b9 supplies token counters; these count only received responses, while reservations cover failures too. Live proxy connectivity and clinical online accuracy remain unverified without recruiter credentials.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 21: final scoring correction and provider proxy verification
+Final stable-source evaluation and Compose execution both score 19.6/75 (21.7% top1, 35.0% top3; recall@20 56.7%). Earlier 19.2 results used diagnostic concatenation before its whitespace correction; final results supersede them. Both SDKs honor HTTPS_PROXY in a local CONNECT-denial test, proving routing without sending requests to a live provider. Success, 401, 429, 500 and timeout fixtures pass with no SDK retries. Official OpenAI pricing confirms $0.15/$0.60 for GPT-4o mini; its published shutdown is January 14, 2027. Retain it for the current three-day assignment window; a later evaluation requires model/pricing revalidation. Anthropic standard pricing for Haiku4.5 is $1/$5. Application reservation rates deliberately exceed both. Provider account billing limits remain authoritative.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+### Decision 22: submission load check
+A 600-record repetition fixture (unique IDs, original 60 notes repeated) completed in 239.67 seconds in a network-disabled container. All 600 rows had unique expected IDs and one to three allowlisted codes, and every output matched final-source dev predictions. This is a throughput/coverage test, not new accuracy evidence. The image used d1bd2b9; the later phrase-exclusion refinement was independently proven equivalent over every dev/category pair, and final-source dev predictions were compared against all 600 outputs. Final-source clean-clone Compose build also passed. No paid API calls were made.
 
 
 <!-- /coderabbit-ai-generated:v1 -->

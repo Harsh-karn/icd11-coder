@@ -49,3 +49,33 @@ class Providers(unittest.IsolatedAsyncioTestCase):
         await asyncio.gather(*(coder.predict_async('cold',[{'code':'CA00','title':'cold'}]) for _ in range(8)))
         self.assertLessEqual(coder.reserved,.01);self.assertEqual(coder.calls,len(calls));self.assertGreater(len(calls),0)
         await coder.close()
+
+    async def test_https_proxy_is_honored(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        from threading import Thread
+        destinations = []
+        class Proxy(BaseHTTPRequestHandler):
+            def do_CONNECT(self):
+                destinations.append(self.path)
+                self.send_error(403, "Synthetic proxy denial")
+            def log_message(self, *args):
+                pass
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Proxy)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            for key, host in [("OPENAI_API_KEY", "api.openai.com:443"),
+                              ("ANTHROPIC_API_KEY", "api.anthropic.com:443")]:
+                env = {key: "synthetic-local-test", "HTTPS_PROXY": f"http://127.0.0.1:{server.server_port}"}
+                with patch.dict(os.environ, env, clear=True):
+                    coder = LLMCoder({"CA00"})
+                    try:
+                        result = await coder.predict_async("cold", [{"code": "CA00", "title": "cold"}])
+                        self.assertEqual([], result)
+                        self.assertIn(host, destinations)
+                    finally:
+                        await coder.close()
+        finally:
+            await asyncio.to_thread(server.shutdown)
+            server.server_close()
+            thread.join()

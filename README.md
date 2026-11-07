@@ -1,5 +1,7 @@
 <!-- coderabbit-ai-generated:v1 -->
 
+<!-- coderabbit-ai-generated-section:v1:9e31c13a73885f11b9e38045c037f84dbce45936dd027c294805a39b3b4f675b -->
+
 <!-- coderabbit-ai-generated-section:v1:cae59e9d9afcff5a61d1627abc3ee0e48e6c47e4de170ff44e23201f85a95b7a -->
 
 # ICD-11 coding assignment
@@ -24,10 +26,10 @@ Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the invoking shell. OpenAI takes 
 
 | Offline evaluation | Top-1 | Top-3 | Score |
 |---|---:|---:|---:|
-| Supplied 60 dev notes | 21.7% | 33.3% | 19.2/75 |
+| Supplied 60 dev notes | 21.7% | 35.0% | 19.6/75 |
 | Corrected 9 synthetic notes | 55.6% | 55.6% | 13.9/25 |
 
-Both have zero missing predictions and invalid codes. Dev candidate recall@20 is 56.7%. Baseline was 18.8/75. Synthetic labels were corrected and one ambiguous example quarantined; its old score is not comparable. An additional 24 exact-title EN/ES/FR smoke cases score 15.6/25; these are plumbing checks, not independent clinical validation. No live LLM evaluation was possible without keys; HTTP transport tests exercise both SDKs, errors and budget controls.
+Both have zero missing predictions and invalid codes. Dev candidate recall@20 is 56.7%. Baseline was 18.8/75. Synthetic labels were corrected and one ambiguous example quarantined; its old score is not comparable. An additional 24 exact-title EN/ES/FR smoke cases score 15.6/25; these are plumbing checks, not independent clinical validation. No live LLM evaluation was possible without keys; tests exercise both SDKs, HTTPS proxy routing, errors and budget controls.
 
 **Hidden-score estimate:** low-confidence offline estimate 20–35/100, extrapolated from small nonrepresentative samples. Online score is unmeasured; no numerical uplift is claimed.
 
@@ -39,7 +41,11 @@ AI tooling mistake caught: documented negation handling was unused; dev-002 stil
 
 Tests: `python -m unittest discover -s tests -v`. Evaluation: `python scripts/evaluate.py --output out/eval.jsonl`. Malformed JSON or duplicate IDs fail explicitly; unusable text retains its ID with empty codes and a stderr diagnostic.
 
-Time: original implementation reported ~7 hours; remediation time is recorded separately in the task history (not included in that estimate).
+Time: original implementation reported ~7 hours; automated remediation took approximately 0.25 hours of wall-clock execution, separately from that original estimate.
+
+
+<!-- /coderabbit-ai-generated:v1 -->
+OpenAI lists GPT-4o mini for shutdown on January 14, 2027; revalidate the model and budget assumptions if evaluating after that date ([notice](https://developers.openai.com/api/docs/deprecations)).
 
 
 <!-- /coderabbit-ai-generated:v1 -->
